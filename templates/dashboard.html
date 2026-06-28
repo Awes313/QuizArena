@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — QuizArena{% endblock %}
+
+{% block head %}
+<style>
+.dash-page {
+    min-height: calc(100vh - 70px);
+    background:
+        radial-gradient(ellipse at 0% 0%, rgba(108,99,255,0.12) 0%, transparent 45%),
+        radial-gradient(ellipse at 100% 100%, rgba(0,255,200,0.08) 0%, transparent 45%),
+        var(--dark);
+    padding: 48px 16px 80px;
+}
+
+/* ══ PAGE HEADER ══ */
+.dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.dash-title h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.dash-title p { color: var(--muted); font-size: 14px; }
+
+/* ══ LEVEL BADGE ══ */
+.level-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,215,0,0.08);
+    border: 1px solid rgba(255,215,0,0.25);
+    border-radius: 50px;
+    padding: 10px 20px;
+}
+
+.level-icon { font-size: 26px; }
+
+.level-info strong {
+    display: block;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    color: var(--gold);
+}
+
+.level-info span { font-size: 12px; color: var(--muted); }
+
+/* ══ XP BAR ══ */
+.xp-section {
+    background: rgba(13,19,32,0.80);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+}
+
+.xp-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.xp-label span { color: var(--muted); }
+.xp-label strong { color: var(--primary); }
+
+.xp-bar-track {
+    height: 10px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.xp-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    background: linear-gradient(to right, var(--secondary), var(--primary));
+    width: 0;
+    transition: width 1.2s ease;
+}
+
+/* ══ STAT CARDS ══ */
+.stat-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: rgba(13,19,32,0.80);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+}
+
+.stat-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.stat-icon.green  { background: rgba(0,255,136,0.12); }
+.stat-icon.blue   { background: rgba(0,195,255,0.12); }
+.stat-icon.gold   { background: rgba(255,215,0,0.12); }
+
+.stat-val  { font-size: 28px; font-weight: 800; color: #fff; font-family: 'Orbitron', sans-serif; }
+.stat-lbl  { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+/* ══ TWO COLUMN LAYOUT ══ */
+.dash-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+/* ══ SECTION BOXES ══ */
+.section-box {
+    background: rgba(13,19,32,0.80);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px;
+}
+
+.section-box h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-box h3 i { color: var(--primary); }
+
+/* ══ CATEGORY STATS ══ */
+.cat-stat-item {
+    margin-bottom: 16px;
+}
+
+.cat-stat-item:last-child { margin-bottom: 0; }
+
+.cat-stat-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.cat-stat-label span { color: var(--text); font-weight: 600; }
+.cat-stat-label strong { color: var(--primary); font-size: 14px; }
+
+.cat-bar-track {
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.cat-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--secondary), var(--primary));
+    width: 0;
+    transition: width 1.2s ease;
+}
+
+/* ══ RECENT TABLE ══ */
+.recent-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.recent-table th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 0 0 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.recent-table td {
+    padding: 12px 0;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+    vertical-align: middle;
+}
+
+.recent-table tr:last-child td { border-bottom: none; }
+
+.pct-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pct-badge.good   { background: rgba(0,255,136,0.12); color: #00ff88; }
+.pct-badge.ok     { background: rgba(255,215,0,0.12);  color: #ffd700; }
+.pct-badge.bad    { background: rgba(255,59,59,0.12);  color: #ff6b6b; }
+
+.no-data {
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 32px;
+}
+
+.no-data i { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.4; }
+
+/* ══ CHART ══ */
+.chart-wrap { position: relative; height: 200px; }
+
+/* ══ PLAY BUTTON ══ */
+.play-prompt {
+    text-align: center;
+    margin-top: 36px;
+}
+
+/* ══ RESPONSIVE ══ */
+@media (max-width: 900px) {
+    .stat-cards { grid-template-columns: repeat(3, 1fr); }
+    .dash-grid  { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+    .stat-cards { grid-template-columns: 1fr 1fr; }
+    .stat-cards .stat-card:last-child { grid-column: span 2; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-page">
+<div class="container" style="max-width:1100px">
+
+    <!-- ══ HEADER ══ -->
+    <div class="dash-header">
+        <div class="dash-title">
+            <h2>My Dashboard</h2>
+            <p>Welcome back, <strong style="color:var(--primary)">{{ username }}</strong> 👋</p>
+        </div>
+        <div class="level-badge">
+            <div class="level-icon">🏅</div>
+            <div class="level-info">
+                <strong>Level {{ level }}</strong>
+                <span>{{ xp }} total XP</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ XP BAR ══ -->
+    <div class="xp-section">
+        <div class="xp-label">
+            <span>Level {{ level }} Progress</span>
+            <strong>{{ xp_in_lvl }} / 100 XP</strong>
+        </div>
+        <div class="xp-bar-track">
+            <div class="xp-bar-fill" id="xpFill" data-width="{{ xp_in_lvl }}"></div>
+        </div>
+    </div>
+
+    <!-- ══ STAT CARDS ══ -->
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="bi bi-controller" style="color:#00ff88"></i></div>
+            <div>
+                <div class="stat-val">{{ total_quizzes }}</div>
+                <div class="stat-lbl">Total Quizzes</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="bi bi-graph-up-arrow" style="color:#00c3ff"></i></div>
+            <div>
+                <div class="stat-val">{{ avg_score }}%</div>
+                <div class="stat-lbl">Average Score</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon gold"><i class="bi bi-trophy-fill" style="color:var(--gold)"></i></div>
+            <div>
+                <div class="stat-val">{{ best_score }}%</div>
+                <div class="stat-lbl">Best Score</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MAIN GRID ══ -->
+    <div class="dash-grid">
+
+        <!-- Category Performance -->
+        <div class="section-box">
+            <h3><i class="bi bi-bar-chart-fill"></i> Category Performance</h3>
+
+            {% if cat_stats %}
+                {% for row in cat_stats %}
+                <div class="cat-stat-item">
+                    <div class="cat-stat-label">
+                        <span>
+                            {% if row['category'] == 'gaming' %}🎮
+                            {% elif row['category'] == 'tech' %}📱
+                            {% elif row['category'] == 'space' %}🌌
+                            {% elif row['category'] == 'science' %}🧪
+                            {% elif row['category'] == 'coding' %}💻
+                            {% elif row['category'] == 'records' %}🌍
+                            {% elif row['category'] == 'riddles' %}🧩
+                            {% else %}🏆{% endif %}
+                            {{ row['category'] | capitalize }}
+                            <span style="color:var(--muted); font-size:11px; font-weight:400">
+                                ({{ row['count'] }} quiz{% if row['count'] != 1 %}zes{% endif %})
+                            </span>
+                        </span>
+                        <strong>{{ row['avg_pct'] }}%</strong>
+                    </div>
+                    <div class="cat-bar-track">
+                        <div class="cat-bar-fill" data-width="{{ row['avg_pct'] }}"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-data">
+                    <i class="bi bi-bar-chart"></i>
+                    Play quizzes to see your category stats!
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Quizzes -->
+        <div class="section-box">
+            <h3><i class="bi bi-clock-history"></i> Recent Quizzes</h3>
+
+            {% if recent %}
+            <table class="recent-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Diff</th>
+                        <th>Score</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for r in recent %}
+                <tr>
+                    <td>{{ r['category'] | capitalize }}</td>
+                    <td style="text-transform:capitalize; color:var(--muted)">{{ r['difficulty'] }}</td>
+                    <td>{{ r['score'] }}/{{ r['total'] }}</td>
+                    <td>
+                        <span class="pct-badge {{ 'good' if r['percentage'] >= 70 else ('ok' if r['percentage'] >= 40 else 'bad') }}">
+                            {{ r['percentage'] }}%
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <i class="bi bi-journal-x"></i>
+                No quizzes played yet. Start your first quiz!
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- ══ PLAY PROMPT ══ -->
+    <div class="play-prompt">
+        <a href="{{ url_for('home') }}" class="btn-qa">
+            <i class="bi bi-lightning-charge-fill"></i> Play a Quiz Now
+        </a>
+    </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js for score history -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Animate XP bar
+setTimeout(() => {
+    const xpFill = document.getElementById("xpFill");
+    if (xpFill) xpFill.style.width = xpFill.dataset.width + "%";
+}, 300);
+
+// Animate category bars
+document.querySelectorAll(".cat-bar-fill").forEach((el, i) => {
+    setTimeout(() => {
+        el.style.width = el.dataset.width + "%";
+    }, 400 + i * 80);
+});
+
+// Stagger stat cards
+document.querySelectorAll(".stat-card").forEach((card, i) => {
+    card.style.opacity = "0";
+    card.style.transform = "translateY(20px)";
+    setTimeout(() => {
+        card.style.transition = "opacity 0.5s, transform 0.5s";
+        card.style.opacity = "1";
+        card.style.transform = "translateY(0)";
+    }, 100 + i * 100);
+});
+</script>
+{% endblock %}

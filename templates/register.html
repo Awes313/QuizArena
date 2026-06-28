@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% block title %}Register — QuizArena{% endblock %}
+
+{% block head %}
+<style>
+.auth-page {
+    min-height: 100vh;
+    background:
+        radial-gradient(ellipse at 80% 30%, rgba(108,99,255,0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 70%, rgba(0,255,200,0.10) 0%, transparent 50%),
+        var(--dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 480px;
+    background: rgba(13,19,32,0.90);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 48px 40px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    animation: cardUp 0.5s ease;
+}
+
+@keyframes cardUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.auth-logo {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.auth-logo img {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    border: 3px solid var(--primary);
+    margin-bottom: 14px;
+}
+
+.auth-logo h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+}
+
+.auth-logo p { color: var(--muted); font-size: 14px; }
+
+.auth-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.auth-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    padding: 12px 16px 12px 44px;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.auth-input:focus {
+    border-color: var(--primary);
+    background: rgba(0,255,200,0.04);
+    box-shadow: 0 0 0 3px rgba(0,255,200,0.10);
+}
+
+.input-wrap {
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 17px;
+    pointer-events: none;
+}
+
+.eye-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 17px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.eye-toggle:hover { color: var(--primary); }
+
+/* strength bar */
+.strength-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    margin-top: 6px;
+    overflow: hidden;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 2px;
+    transition: width 0.3s, background 0.3s;
+}
+
+.strength-label {
+    font-size: 11px;
+    margin-top: 4px;
+    color: var(--muted);
+    text-align: right;
+}
+
+.auth-submit {
+    width: 100%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border: none;
+    color: #000;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 13px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 8px;
+}
+
+.auth-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0,255,200,0.35);
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.auth-footer a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-footer a:hover { text-decoration: underline; }
+
+.hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+
+        <div class="auth-logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+            <h1>Create Account</h1>
+            <p>Join QuizArena and start competing!</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('register') }}" autocomplete="off">
+
+            <label class="auth-label">Username</label>
+            <div class="input-wrap">
+                <i class="bi bi-person-fill input-icon"></i>
+                <input type="text" name="username" class="auth-input"
+                       placeholder="Choose a username (min 3 chars)"
+                       required minlength="3" autocomplete="username">
+            </div>
+            <p class="hint" style="margin-top:-14px; margin-bottom:16px;">
+                <i class="bi bi-info-circle"></i> Minimum 3 characters, no spaces.
+            </p>
+
+            <label class="auth-label">Password</label>
+            <div class="input-wrap">
+                <i class="bi bi-lock-fill input-icon"></i>
+                <input type="password" name="password" id="pwdField" class="auth-input"
+                       placeholder="Create a strong password"
+                       required minlength="6" autocomplete="new-password"
+                       oninput="checkStrength(this.value)">
+                <button type="button" class="eye-toggle" onclick="toggleEye('pwdField','eye1')">
+                    <i class="bi bi-eye-fill" id="eye1"></i>
+                </button>
+            </div>
+            <div class="strength-bar"><div class="strength-fill" id="sBar"></div></div>
+            <p class="strength-label" id="sLabel">Enter password</p>
+
+            <label class="auth-label" style="margin-top:14px;">Confirm Password</label>
+            <div class="input-wrap">
+                <i class="bi bi-lock-fill input-icon"></i>
+                <input type="password" name="confirm_password" id="cpwdField" class="auth-input"
+                       placeholder="Re-enter your password"
+                       required autocomplete="new-password">
+                <button type="button" class="eye-toggle" onclick="toggleEye('cpwdField','eye2')">
+                    <i class="bi bi-eye-fill" id="eye2"></i>
+                </button>
+            </div>
+
+            <button type="submit" class="auth-submit">
+                <i class="bi bi-rocket-takeoff-fill"></i> Create My Account
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a href="{{ url_for('login') }}">Login →</a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleEye(fieldId, iconId) {
+    const f = document.getElementById(fieldId);
+    const i = document.getElementById(iconId);
+    const show = f.type === "password";
+    f.type = show ? "text" : "password";
+    i.className = show ? "bi bi-eye-slash-fill" : "bi bi-eye-fill";
+}
+
+function checkStrength(val) {
+    const bar   = document.getElementById("sBar");
+    const label = document.getElementById("sLabel");
+    let score = 0;
+    if (val.length >= 6)  score++;
+    if (val.length >= 10) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+
+    const levels = [
+        { w:"0%",   bg:"transparent",  t:"Too short" },
+        { w:"25%",  bg:"#ff3b3b",      t:"Weak" },
+        { w:"50%",  bg:"#ff9800",      t:"Fair" },
+        { w:"75%",  bg:"#ffd700",      t:"Good" },
+        { w:"100%", bg:"#00ff88",      t:"Strong 💪" },
+    ];
+    const l = levels[Math.min(score, 4)];
+    bar.style.width      = l.w;
+    bar.style.background = l.bg;
+    label.textContent    = l.t;
+    label.style.color    = l.bg;
+}
+</script>
+{% endblock %}

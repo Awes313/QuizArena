@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}404 - Page Not Found | QuizArena{% endblock %}
+
+{% block extra_css %}
+<style>
+  body {
+    background: linear-gradient(135deg, #0f0f1a, #1a1a2e);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .error-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .error-code {
+    font-size: 8rem;
+    font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(90deg, #f97316, #facc15);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: glitch 2.5s infinite;
+  }
+  @keyframes glitch {
+    0%, 90%, 100% { transform: none; }
+    92% { transform: skewX(-3deg) translateX(-4px); }
+    94% { transform: skewX(3deg)  translateX(4px); }
+    96% { transform: skewX(-2deg) translateX(-2px); }
+  }
+  .error-emoji { font-size: 4rem; margin: 10px 0; display: block; animation: bounce 1.5s infinite; }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-12px); }
+  }
+  .error-title { font-size: 1.8rem; font-weight: 700; color: #f1f5f9; margin-bottom: 10px; }
+  .error-sub   { color: #64748b; font-size: 1rem; margin-bottom: 30px; }
+  .btn-home {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff;
+    padding: 12px 32px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1rem;
+    display: inline-block;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 6px 20px rgba(249,115,22,0.35);
+  }
+  .btn-home:hover { transform: translateY(-3px); color: #fff; box-shadow: 0 10px 28px rgba(249,115,22,0.5); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-wrap">
+  <div>
+    <div class="error-code">404</div>
+    <span class="error-emoji">🕹️</span>
+    <div class="error-title">Level Not Found</div>
+    <div class="error-sub">Looks like this page got eliminated from the arena.</div>
+    <a href="{{ url_for('home') }}" class="btn-home">🏠 Back to Arena</a>
+  </div>
+</div>
+{% endblock %}

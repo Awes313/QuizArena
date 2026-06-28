@@ -1,0 +1,568 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel — QuizArena{% endblock %}
+
+{% block head %}
+<style>
+.admin-page {
+    min-height: calc(100vh - 70px);
+    background:
+        radial-gradient(ellipse at 5% 10%, rgba(255,59,59,0.10) 0%, transparent 45%),
+        radial-gradient(ellipse at 95% 90%, rgba(108,99,255,0.10) 0%, transparent 45%),
+        var(--dark);
+    padding: 40px 16px 80px;
+}
+
+/* ══ HEADER ══ */
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 36px;
+}
+
+.admin-title h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.admin-title h2 i { color: var(--accent); }
+.admin-title p { color: var(--muted); font-size: 14px; }
+
+/* ══ STAT STRIP ══ */
+.admin-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+}
+
+.admin-stat {
+    background: rgba(13,19,32,0.80);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 150px;
+    transition: transform 0.3s;
+}
+
+.admin-stat:hover { transform: translateY(-3px); }
+
+.admin-stat-icon {
+    font-size: 26px;
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.asi-purple { background: rgba(108,99,255,0.15); }
+.asi-green  { background: rgba(0,255,136,0.12); }
+.asi-blue   { background: rgba(0,195,255,0.12); }
+
+.admin-stat-val {
+    font-size: 28px;
+    font-weight: 900;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    line-height: 1;
+}
+
+.admin-stat-lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+
+/* ══ SECTION BOX ══ */
+.admin-box {
+    background: rgba(13,19,32,0.80);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 28px;
+}
+
+.admin-box h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-box h3 i { color: var(--primary); }
+
+/* ══ FILTER BAR ══ */
+.filter-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.filter-select, .filter-input {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 13px;
+    padding: 9px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.filter-select:focus, .filter-input:focus { border-color: var(--primary); }
+
+.filter-input { flex: 1; min-width: 180px; }
+
+.filter-select option { background: #0d1320; }
+
+.btn-filter {
+    background: rgba(0,255,200,0.10);
+    border: 1px solid rgba(0,255,200,0.25);
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-filter:hover { background: var(--primary); color: #000; }
+
+/* ══ QUESTIONS TABLE ══ */
+.q-table { width: 100%; border-collapse: collapse; }
+
+.q-table th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.q-table td {
+    padding: 14px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+    vertical-align: middle;
+}
+
+.q-table tr:last-child td { border-bottom: none; }
+
+.q-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.q-text-cell {
+    max-width: 340px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tag {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.tag-easy { background: rgba(0,255,136,0.12); color: #00ff88; }
+.tag-hard { background: rgba(255,59,59,0.12);  color: #ff6b6b; }
+
+.tag-cat {
+    background: rgba(108,99,255,0.12);
+    color: var(--secondary);
+    border: 1px solid rgba(108,99,255,0.2);
+}
+
+.btn-del {
+    background: rgba(255,59,59,0.10);
+    border: 1px solid rgba(255,59,59,0.25);
+    color: #ff6b6b;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-del:hover { background: #ff3b3b; color: #fff; border-color: #ff3b3b; }
+
+/* ══ ADD QUESTION FORM ══ */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 7px; }
+.form-group.full { grid-column: span 2; }
+
+.form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control-qa {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 11px 14px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    font-family: 'Inter', sans-serif;
+    width: 100%;
+}
+
+.form-control-qa:focus {
+    border-color: var(--primary);
+    background: rgba(0,255,200,0.04);
+    box-shadow: 0 0 0 3px rgba(0,255,200,0.08);
+}
+
+.form-control-qa option { background: #0d1320; }
+
+.radio-group {
+    display: flex;
+    gap: 12px;
+}
+
+.radio-option {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.radio-option input { display: none; }
+
+.radio-option.ans-a:has(input:checked),
+.radio-option.ans-b:has(input:checked),
+.radio-option.ans-c:has(input:checked),
+.radio-option.ans-d:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(0,255,200,0.08);
+    color: var(--primary);
+}
+
+.btn-submit-qa {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border: none;
+    color: #000;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 13px 36px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 8px;
+}
+
+.btn-submit-qa:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0,255,200,0.35);
+}
+
+/* ══ EMPTY STATE ══ */
+.empty-state {
+    text-align: center;
+    padding: 48px;
+    color: var(--muted);
+}
+
+.empty-state i { font-size: 40px; display: block; margin-bottom: 12px; opacity: 0.4; }
+
+/* ══ PAGINATION HINT ══ */
+.table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: span 1; }
+    .admin-stats { flex-direction: column; }
+    .q-table th:nth-child(4),
+    .q-table td:nth-child(4) { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+<div class="container" style="max-width:1200px;">
+
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="admin-title">
+            <h2><i class="bi bi-shield-fill-check"></i> Admin Panel</h2>
+            <p>Manage questions, view stats, and control the QuizArena.</p>
+        </div>
+        <a href="{{ url_for('home') }}" class="btn-outline-qa" style="font-size:13px;padding:8px 18px;">
+            <i class="bi bi-house-fill"></i> Back to Home
+        </a>
+    </div>
+
+    <!-- Stat Strip -->
+    <div class="admin-stats">
+        <div class="admin-stat">
+            <div class="admin-stat-icon asi-purple">❓</div>
+            <div>
+                <div class="admin-stat-val">{{ total_q }}</div>
+                <div class="admin-stat-lbl">Total Questions</div>
+            </div>
+        </div>
+        <div class="admin-stat">
+            <div class="admin-stat-icon asi-green">👤</div>
+            <div>
+                <div class="admin-stat-val">{{ total_u }}</div>
+                <div class="admin-stat-lbl">Registered Users</div>
+            </div>
+        </div>
+        <div class="admin-stat">
+            <div class="admin-stat-icon asi-blue">🎯</div>
+            <div>
+                <div class="admin-stat-val">{{ total_r }}</div>
+                <div class="admin-stat-lbl">Quizzes Played</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ADD QUESTION ══ -->
+    <div class="admin-box">
+        <h3><i class="bi bi-plus-circle-fill"></i> Add New Question</h3>
+
+        <form method="POST" action="{{ url_for('admin') }}" autocomplete="off">
+            <input type="hidden" name="action" value="add">
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-control-qa" required>
+                        <option value="">— Select Category —</option>
+                        <option value="gaming">🎮 Gaming</option>
+                        <option value="tech">💻 Tech</option>
+                        <option value="records">🌍 Records</option>
+                        <option value="riddles">🧩 Riddles</option>
+                        <option value="coding">⌨️ Coding</option>
+                        <option value="space">🚀 Space</option>
+                        <option value="science">🔬 Science</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Difficulty</label>
+                    <select name="difficulty" class="form-control-qa" required>
+                        <option value="">— Select Difficulty —</option>
+                        <option value="easy">Easy</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+
+                <div class="form-group full">
+                    <label class="form-label">Question Text</label>
+                    <textarea name="question" class="form-control-qa" rows="3"
+                              placeholder="Enter the question..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Option A</label>
+                    <input type="text" name="option1" class="form-control-qa" placeholder="Option A" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Option B</label>
+                    <input type="text" name="option2" class="form-control-qa" placeholder="Option B" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Option C</label>
+                    <input type="text" name="option3" class="form-control-qa" placeholder="Option C" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Option D</label>
+                    <input type="text" name="option4" class="form-control-qa" placeholder="Option D" required>
+                </div>
+
+                <div class="form-group full">
+                    <label class="form-label">Correct Answer</label>
+                    <div class="radio-group">
+                        {% for letter in ['A','B','C','D'] %}
+                        <label class="radio-option ans-{{ letter.lower() }}">
+                            <input type="radio" name="answer" value="{{ letter }}" required>
+                            <span style="color:var(--primary); font-weight:800;">{{ letter }}</span>
+                            <span>Option {{ letter }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+            <button type="submit" class="btn-submit-qa">
+                <i class="bi bi-plus-lg"></i> Add Question
+            </button>
+        </form>
+    </div>
+
+    <!-- ══ QUESTIONS LIST ══ -->
+    <div class="admin-box">
+        <h3><i class="bi bi-list-ul"></i> Question Bank</h3>
+
+        <!-- Filter Bar -->
+        <form method="GET" action="{{ url_for('admin') }}" class="filter-bar">
+            <select name="cat" class="filter-select">
+                <option value="">All Categories</option>
+                {% for c in ['gaming','tech','records','riddles','coding','space','science'] %}
+                <option value="{{ c }}" {{ 'selected' if f_cat == c }}>{{ c | capitalize }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="diff" class="filter-select">
+                <option value="">All Difficulties</option>
+                <option value="easy"  {{ 'selected' if f_diff == 'easy' }}>Easy</option>
+                <option value="hard"  {{ 'selected' if f_diff == 'hard' }}>Hard</option>
+            </select>
+
+            <input type="text" name="q" class="filter-input"
+                   placeholder="🔍 Search questions..."
+                   value="{{ search }}">
+
+            <button type="submit" class="btn-filter">
+                <i class="bi bi-funnel-fill"></i> Filter
+            </button>
+            <a href="{{ url_for('admin') }}" class="btn-filter" style="text-decoration:none;">
+                <i class="bi bi-x-lg"></i> Clear
+            </a>
+        </form>
+
+        {% if questions %}
+        <div style="overflow-x:auto;">
+            <table class="q-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Question</th>
+                        <th>Category</th>
+                        <th>Difficulty</th>
+                        <th>Answer</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for q in questions %}
+                <tr>
+                    <td style="color:var(--muted); font-size:12px;">#{{ q['id'] }}</td>
+                    <td class="q-text-cell" title="{{ q['question'] }}">{{ q['question'] }}</td>
+                    <td><span class="tag tag-cat">{{ q['category'] }}</span></td>
+                    <td>
+                        <span class="tag tag-{{ q['difficulty'] }}">{{ q['difficulty'] }}</span>
+                    </td>
+                    <td style="max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--primary); font-size:12px;">
+                        {{ q['answer'] }}
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin') }}"
+                              onsubmit="return confirm('Delete this question?');"
+                              style="display:inline;">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="question_id" value="{{ q['id'] }}">
+                            <button type="submit" class="btn-del">
+                                <i class="bi bi-trash3-fill"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="table-footer">
+            <span>Showing {{ questions | length }} result(s)</span>
+            {% if search or f_cat or f_diff %}
+            <a href="{{ url_for('admin') }}" style="color:var(--primary); text-decoration:none; font-size:13px;">
+                View all questions
+            </a>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-question-circle"></i>
+            No questions found. Add some above or adjust filters.
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Animate stat cards in
+document.querySelectorAll('.admin-stat').forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(16px)';
+    setTimeout(() => {
+        el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+    }, 100 + i * 80);
+});
+
+// Radio option visual highlight
+document.querySelectorAll('.radio-option').forEach(label => {
+    label.addEventListener('click', () => {
+        document.querySelectorAll('.radio-option').forEach(l =>
+            l.style.borderColor = '');
+        label.style.borderColor = 'var(--primary)';
+    });
+});
+</script>
+{% endblock %}

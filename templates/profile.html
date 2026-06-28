@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% block title %}Profile - QuizArena{% endblock %}
+
+{% block extra_css %}
+<style>
+  body {
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 60%, #0f172a 100%);
+    min-height: 100vh;
+    color: #fff;
+  }
+
+  /* ── Hero Banner ── */
+  .profile-hero {
+    background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(234,88,12,0.06));
+    border-bottom: 1px solid rgba(249,115,22,0.15);
+    padding: 50px 0 40px;
+    text-align: center;
+  }
+
+  .avatar-ring {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.4rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    box-shadow: 0 0 0 4px rgba(249,115,22,0.25), 0 0 30px rgba(249,115,22,0.3);
+    animation: pulse-ring 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(249,115,22,0.25), 0 0 30px rgba(249,115,22,0.3); }
+    50%       { box-shadow: 0 0 0 8px rgba(249,115,22,0.15), 0 0 50px rgba(249,115,22,0.5); }
+  }
+
+  .profile-hero h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f1f5f9;
+  }
+
+  .profile-hero .joined {
+    color: #64748b;
+    font-size: 0.88rem;
+    margin-top: 4px;
+  }
+
+  /* ── Stat Cards ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 30px 0;
+  }
+
+  .stat-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 22px 16px;
+    text-align: center;
+    transition: transform 0.3s, border-color 0.3s;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(249,115,22,0.3);
+  }
+
+  .stat-icon { font-size: 1.8rem; margin-bottom: 8px; }
+  .stat-value { font-size: 2rem; font-weight: 900; color: #f97316; }
+  .stat-label { font-size: 0.78rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+  /* ── Section Header ── */
+  .section-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f97316;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(249,115,22,0.2);
+  }
+
+  /* ── Category Progress ── */
+  .category-progress-list { display: flex; flex-direction: column; gap: 14px; }
+
+  .cat-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255,255,255,0.03);
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: background 0.2s;
+  }
+
+  .cat-row:hover { background: rgba(255,255,255,0.06); }
+
+  .cat-icon { font-size: 1.5rem; width: 36px; text-align: center; }
+  .cat-name { font-weight: 600; font-size: 0.95rem; color: #e2e8f0; min-width: 100px; }
+  .cat-bar-wrap { flex: 1; }
+
+  .cat-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .cat-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #f97316, #facc15);
+    transition: width 1.2s ease;
+  }
+
+  .cat-score {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #facc15;
+    min-width: 50px;
+    text-align: right;
+  }
+
+  /* ── Recent Games ── */
+  .recent-table {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .recent-table-header {
+    display: grid;
+    grid-template-columns: 1fr 120px 100px 120px;
+    padding: 12px 18px;
+    background: rgba(249,115,22,0.1);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #f97316;
+  }
+
+  .recent-table-row {
+    display: grid;
+    grid-template-columns: 1fr 120px 100px 120px;
+    padding: 14px 18px;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.9rem;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(10px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .diff-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .diff-easy { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .diff-hard { background: rgba(239,68,68,0.15);  color: #ef4444; }
+
+  .score-cell { font-weight: 800; color: #22d3ee; }
+
+  .time-cell { color: #64748b; font-size: 0.82rem; }
+
+  /* ── Achievement Badges ── */
+  .badges-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .badge-item {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 14px 18px;
+    text-align: center;
+    min-width: 110px;
+    transition: all 0.3s;
+  }
+
+  .badge-item:hover { transform: scale(1.05); border-color: rgba(249,115,22,0.4); }
+
+  .badge-item .b-icon { font-size: 2rem; display: block; margin-bottom: 6px; }
+  .badge-item .b-name { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-item.earned { border-color: rgba(250,204,21,0.4); background: rgba(250,204,21,0.07); }
+  .badge-item.earned .b-name { color: #facc15; }
+  .badge-item.locked { opacity: 0.4; filter: grayscale(1); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="profile-hero">
+  <div class="avatar-ring">{{ user.username[0].upper() }}</div>
+  <h2>{{ user.username }}</h2>
+  <div class="joined">Member since {{ user.joined }}</div>
+</div>
+
+<div class="container" style="max-width:900px; padding: 40px 16px 80px;">
+
+  <!-- Stat Grid -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-icon">🎯</div>
+      <div class="stat-value">{{ stats.total_games }}</div>
+      <div class="stat-label">Games Played</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⭐</div>
+      <div class="stat-value">{{ stats.best_score }}/10</div>
+      <div class="stat-label">Best Score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📈</div>
+      <div class="stat-value">{{ stats.avg_score }}</div>
+      <div class="stat-label">Avg Score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <div class="stat-value">{{ stats.accuracy }}%</div>
+      <div class="stat-label">Accuracy</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🔥</div>
+      <div class="stat-value">{{ stats.streak }}</div>
+      <div class="stat-label">Win Streak</div>
+    </div>
+  </div>
+
+  <!-- Category Performance -->
+  <div class="mb-4">
+    <div class="section-header">📊 Category Performance</div>
+    <div class="category-progress-list">
+      {% for cat in category_stats %}
+      <div class="cat-row">
+        <div class="cat-icon">{{ cat.icon }}</div>
+        <div class="cat-name">{{ cat.name }}</div>
+        <div class="cat-bar-wrap">
+          <div class="cat-bar">
+            <div class="cat-fill" data-width="{{ cat.pct }}" style="width:0%;"></div>
+          </div>
+        </div>
+        <div class="cat-score">{{ cat.best }}/10</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Recent Games -->
+    <div class="col-lg-8">
+      <div class="section-header">🕹️ Recent Games</div>
+      <div class="recent-table">
+        <div class="recent-table-header">
+          <div>Category</div>
+          <div>Difficulty</div>
+          <div>Score</div>
+          <div>Date</div>
+        </div>
+        {% for game in recent_games %}
+        <div class="recent-table-row" style="animation-delay: {{ loop.index * 0.07 }}s;">
+          <div>{{ game.category_icon }} {{ game.category | title }}</div>
+          <div>
+            <span class="diff-badge diff-{{ game.difficulty }}">{{ game.difficulty }}</span>
+          </div>
+          <div class="score-cell">{{ game.score }}/10</div>
+          <div class="time-cell">{{ game.played_at }}</div>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:40px; color:#64748b;">
+          No games played yet. <a href="{{ url_for('home') }}" style="color:#f97316;">Start playing!</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Achievements -->
+    <div class="col-lg-4">
+      <div class="section-header">🏅 Achievements</div>
+      <div class="badges-grid">
+        {% for badge in badges %}
+        <div class="badge-item {% if badge.earned %}earned{% else %}locked{% endif %}">
+          <span class="b-icon">{{ badge.icon }}</span>
+          <div class="b-name">{{ badge.name }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Animate category bars
+    document.querySelectorAll(".cat-fill").forEach(el => {
+      const w = el.getAttribute("data-width");
+      setTimeout(() => { el.style.width = w + "%"; }, 400);
+    });
+  });
+</script>
+{% endblock %}

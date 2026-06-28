@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}Select Difficulty — QuizArena{% endblock %}
+
+{% block head %}
+<style>
+.select-page {
+  background:
+    url("{{ url_for('static', filename='images/select.jpg') }}") center center / cover no-repeat fixed,
+    var(--dark);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px 60px;
+  flex: 1;
+}
+
+.select-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(8,12,20,0.78);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.select-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1100px;
+  text-align: center;
+}
+
+/* ── BREADCRUMB ── */
+.sel-breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 36px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.sel-breadcrumb a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.sel-breadcrumb a:hover { color: var(--primary); }
+.sel-breadcrumb span { color: var(--text); font-weight: 600; }
+
+.sel-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(26px, 5vw, 42px);
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.sel-cat {
+  font-size: 18px;
+  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.sel-timer-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,215,0,0.08);
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: 50px;
+  padding: 5px 16px;
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 44px;
+}
+
+/* ── DIFFICULTY CARDS ── */
+.diff-grid {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.diff-card {
+  width: 360px;
+  border-radius: 24px;
+  overflow: hidden;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  position: relative;
+  border: 2px solid transparent;
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s ease, border-color 0.3s;
+  opacity: 0;
+  transform: translateY(40px);
+}
+
+.diff-card img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display: block;
+  background: #1a1f2e;
+  transition: transform 0.5s ease;
+}
+
+.diff-card:hover img { transform: scale(1.06); }
+
+.diff-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.90) 0%, rgba(0,0,0,0.25) 55%, transparent 100%);
+}
+
+.diff-info {
+  position: absolute;
+  bottom: 24px; left: 0; right: 0;
+  padding: 0 24px;
+  text-align: left;
+}
+
+.diff-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.diff-name { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.diff-desc { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5; }
+
+.diff-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 9px 22px;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.3s;
+}
+
+/* ── EASY ── */
+.diff-card.easy { border-color: rgba(0,255,136,0.2); }
+.diff-card.easy:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 24px 64px rgba(0,255,136,0.45); border-color: rgba(0,255,136,0.6); }
+.easy .diff-label { background: rgba(0,255,136,0.15); color: #00ff88; }
+.easy .diff-btn   { background: rgba(0,255,136,0.15); color: #00ff88; border: 1px solid rgba(0,255,136,0.3); }
+.easy:hover .diff-btn { background: #00ff88; color: #000; }
+
+/* ── HARD ── */
+.diff-card.hard { border-color: rgba(255,59,59,0.2); }
+.diff-card.hard:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 24px 64px rgba(255,59,59,0.45); border-color: rgba(255,59,59,0.6); }
+.hard .diff-label { background: rgba(255,59,59,0.15); color: #ff6b6b; }
+.hard .diff-btn   { background: rgba(255,59,59,0.15); color: #ff6b6b; border: 1px solid rgba(255,59,59,0.3); }
+.hard:hover .diff-btn { background: #ff6b6b; color: #fff; }
+
+/* ── CHAMPION ── */
+.diff-card.champion { border-color: rgba(255,215,0,0.3); width: 440px; }
+.diff-card.champion:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 24px 80px rgba(255,215,0,0.50); border-color: rgba(255,215,0,0.7); }
+.champion .diff-label { background: rgba(255,215,0,0.15); color: var(--gold); }
+.champion .diff-btn   { background: rgba(255,215,0,0.15); color: var(--gold); border: 1px solid rgba(255,215,0,0.3); }
+.champion:hover .diff-btn { background: var(--gold); color: #000; }
+
+/* ── BACK BUTTON ── */
+.back-wrap { margin-top: 48px; }
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 22px;
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s;
+}
+
+.back-btn:hover {
+  color: var(--text);
+  border-color: rgba(255,255,255,0.25);
+  background: var(--glass-b);
+}
+
+@media (max-width: 768px) {
+  .diff-card, .diff-card.champion { width: 90%; max-width: 380px; }
+  .diff-grid { flex-direction: column; align-items: center; gap: 20px; }
+  .diff-card img { height: 230px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="select-page">
+<div class="select-content">
+
+  <!-- Breadcrumb -->
+  <div class="sel-breadcrumb">
+    <a href="{{ url_for('home') }}"><i class="bi bi-house-fill"></i> Home</a>
+    <i class="bi bi-chevron-right"></i>
+    <span>{{ category | capitalize }}</span>
+  </div>
+
+  <div class="sel-title">Select Difficulty</div>
+  <div class="sel-cat">
+    {% if category == 'gaming' %}🎮{% elif category == 'tech' %}📱
+    {% elif category == 'records' %}🌍{% elif category == 'riddles' %}🧩
+    {% elif category == 'coding' %}💻{% elif category == 'space' %}🌌
+    {% elif category == 'science' %}🧪{% elif category == 'champion' %}🏆
+    {% endif %}
+    {{ category | capitalize }}
+  </div>
+
+  <div class="sel-timer-note">
+    <i class="bi bi-stopwatch-fill"></i> 20 seconds per question
+  </div>
+
+  <div class="diff-grid">
+    {% if category == "champion" %}
+      <a href="{{ url_for('quiz', category='champion', difficulty='easy') }}" class="diff-card champion">
+        <img src="{{ url_for('static', filename='images/champion.jpg') }}" alt="Champion">
+        <div class="diff-overlay"></div>
+        <div class="diff-info">
+          <div class="diff-label"><i class="bi bi-trophy-fill"></i> CHAMPION</div>
+          <div class="diff-name">Champion Mode</div>
+          <div class="diff-desc">Questions from ALL categories mixed together. The ultimate test of knowledge.</div>
+          <div class="diff-btn"><i class="bi bi-lightning-fill"></i> Start Challenge</div>
+        </div>
+      </a>
+    {% else %}
+      <a href="{{ url_for('quiz', category=category, difficulty='easy') }}" class="diff-card easy">
+        <img src="{{ url_for('static', filename='images/easy.jpg') }}" alt="Easy">
+        <div class="diff-overlay"></div>
+        <div class="diff-info">
+          <div class="diff-label"><i class="bi bi-shield-fill"></i> EASY</div>
+          <div class="diff-name">Easy Mode</div>
+          <div class="diff-desc">Beginner-friendly questions. Great for warming up and building confidence.</div>
+          <div class="diff-btn"><i class="bi bi-play-fill"></i> Start Easy</div>
+        </div>
+      </a>
+
+      <a href="{{ url_for('quiz', category=category, difficulty='hard') }}" class="diff-card hard">
+        <img src="{{ url_for('static', filename='images/hard.jpg') }}" alt="Hard">
+        <div class="diff-overlay"></div>
+        <div class="diff-info">
+          <div class="diff-label"><i class="bi bi-fire"></i> HARD</div>
+          <div class="diff-name">Hard Mode</div>
+          <div class="diff-desc">Advanced questions that separate the experts from the rest. Are you ready?</div>
+          <div class="diff-btn"><i class="bi bi-play-fill"></i> Start Hard</div>
+        </div>
+      </a>
+    {% endif %}
+  </div>
+
+  <div class="back-wrap">
+    <a href="{{ url_for('home') }}" class="back-btn">
+      <i class="bi bi-arrow-left"></i> Back to Categories
+    </a>
+  </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.diff-card').forEach((card, i) => {
+  setTimeout(() => {
+    card.style.transition = 'opacity 0.5s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s ease, border-color 0.3s';
+    card.style.opacity    = '1';
+    card.style.transform  = 'translateY(0)';
+  }, 200 + i * 120);
+});
+</script>
+{% endblock %}

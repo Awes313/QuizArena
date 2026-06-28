@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block title %}Home — QuizArena{% endblock %}
+
+{% block head %}
+<style>
+.home-page {
+  background:
+    url("{{ url_for('static', filename='images/home.jpg') }}") center center / cover no-repeat fixed,
+    var(--dark);
+  position: relative;
+  padding: 60px 0 80px;
+  flex: 1;
+}
+.home-page::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: rgba(8,12,20,0.78);
+  z-index: 0; pointer-events: none;
+}
+.home-content { position: relative; z-index: 1; }
+
+/* HERO */
+.hero { text-align: center; padding: 50px 20px 60px; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(0,255,200,0.10); border: 1px solid rgba(0,255,200,0.25);
+  border-radius: 50px; padding: 6px 18px; font-size: 13px;
+  color: var(--primary); font-weight: 600; margin-bottom: 24px;
+  animation: fadeDown 0.5s ease;
+}
+.hero h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(32px, 6vw, 62px); font-weight: 900; line-height: 1.15;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #ffffff 20%, var(--primary) 60%, var(--secondary) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: fadeDown 0.6s ease 0.1s both;
+}
+.hero p {
+  font-size: clamp(15px, 2.5vw, 20px); color: rgba(255,255,255,0.75);
+  max-width: 580px; margin: 0 auto 36px; line-height: 1.7;
+  animation: fadeDown 0.6s ease 0.2s both;
+}
+.hero-stats { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; animation: fadeDown 0.6s ease 0.35s both; }
+.hero-stat strong { display: block; font-size: 26px; font-weight: 800; color: var(--primary); font-family: 'Orbitron', sans-serif; }
+.hero-stat span   { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* SECTION HEAD */
+.section-head { text-align: center; margin-bottom: 40px; animation: fadeDown 0.6s ease 0.4s both; }
+.section-head h2 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.section-head p  { font-size: 14px; color: var(--muted); }
+
+/* CATEGORY GRID — 4 columns */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  padding: 0 16px;
+}
+
+/* CATEGORY CARD */
+.cat-card {
+  position: relative; border-radius: 20px; overflow: hidden;
+  height: 220px; cursor: pointer; text-decoration: none;
+  display: block;
+  border: 1px solid rgba(255,255,255,0.06);
+  opacity: 0; transform: translateY(30px);
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.3s;
+}
+.cat-card img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.5s ease; display: block; background: #1a1f2e;
+}
+.cat-card:hover img { transform: scale(1.08); }
+.cat-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.20) 60%, transparent 100%);
+  transition: background 0.3s;
+}
+.cat-card:hover .cat-overlay {
+  background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.35) 60%, transparent 100%);
+}
+.cat-info {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 16px 18px; display: flex; align-items: flex-end; justify-content: space-between;
+}
+.cat-name { font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+.cat-badge {
+  font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px;
+  background: rgba(255,215,0,0.20); color: var(--gold); border: 1px solid rgba(255,215,0,0.3);
+}
+.cat-arrow {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 14px; transition: all 0.3s;
+  opacity: 0; transform: translateX(-8px);
+}
+.cat-card:hover .cat-arrow {
+  opacity: 1; transform: translateX(0);
+  background: var(--primary); color: #000; border-color: var(--primary);
+}
+
+/* CHAMPION CARD — special gold border */
+.cat-card.champion {
+  border: 2px solid rgba(255,215,0,0.45);
+  box-shadow: 0 0 24px rgba(255,215,0,0.12);
+}
+.cat-card.champion:hover {
+  box-shadow: 0 16px 48px rgba(255,215,0,0.40) !important;
+  border-color: rgba(255,215,0,0.70) !important;
+}
+
+/* PER-CATEGORY HOVER GLOW */
+.cat-card.gaming:hover  { transform: translateY(-10px) scale(1.02); box-shadow: 0 16px 48px rgba(255,107,107,0.40); }
+.cat-card.tech:hover    { transform: translateY(-10px) scale(1.02); box-shadow: 0 16px 48px rgba(0,195,255,0.40);   }
+.cat-card.records:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 16px 48px rgba(0,255,200,0.35);  }
+.cat-card.riddles:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 16px 48px rgba(108,99,255,0.40); }
+.cat-card.coding:hover  { transform: translateY(-10px) scale(1.02); box-shadow: 0 16px 48px rgba(255,200,0,0.35);  }
+.cat-card.space:hover   { transform: translateY(-10px) scale(1.02); box-shadow: 0 16px 48px rgba(150,100,255,0.45);}
+.cat-card.science:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 16px 48px rgba(0,255,100,0.35);  }
+.cat-card.champion:hover{ transform: translateY(-10px) scale(1.02); }
+
+@keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp   { from{opacity:0;transform:translateY(24px)}  to{opacity:1;transform:translateY(0)} }
+
+/* RESPONSIVE */
+@media (max-width: 1100px) { .cat-grid { grid-template-columns: repeat(3,1fr); } }
+@media (max-width: 768px)  { .cat-grid { grid-template-columns: repeat(2,1fr); gap:16px; } .cat-card{height:175px;} }
+@media (max-width: 480px)  { .cat-grid { grid-template-columns:1fr 1fr; gap:12px; } .cat-card{height:150px;} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="home-page">
+<div class="home-content">
+
+  <!-- HERO -->
+  <div class="hero container">
+    <div class="hero-badge"><i class="bi bi-lightning-charge-fill"></i> 8 Categories · 140+ Questions · Real-Time Leaderboard</div>
+    <h1>Challenge Your<br>Mind. Earn Glory.</h1>
+    <p>Pick a category, choose your difficulty, and prove you're the ultimate QuizArena champion.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><strong>8</strong><span>Categories</span></div>
+      <div class="hero-stat"><strong>140+</strong><span>Questions</span></div>
+      <div class="hero-stat"><strong>20s</strong><span>Per Question</span></div>
+      <div class="hero-stat"><strong>XP</strong><span>System</span></div>
+    </div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <div class="container">
+    <div class="section-head">
+      <h2>Choose Your Category</h2>
+      <p>Each category has Easy and Hard modes. Ready to compete?</p>
+    </div>
+
+    <!--
+      LAYOUT (4 cols × 2 rows):
+      Row 1: Gaming | Tech    | Records  | Riddles
+      Row 2: Coding | Space   | Science  | Champion ← Champion now at position 4 (rightmost)
+    -->
+    <div class="cat-grid">
+
+      <!-- ROW 1 -->
+      <a href="{{ url_for('select', category='gaming') }}"  class="cat-card gaming">
+        <img src="{{ url_for('static', filename='images/gaming.jpg') }}" alt="Gaming" loading="lazy">
+        <div class="cat-overlay"></div>
+        <div class="cat-info"><div class="cat-name">🎮 Gaming</div><div class="cat-arrow"><i class="bi bi-arrow-right"></i></div></div>
+      </a>
+
+      <a href="{{ url_for('select', category='tech') }}"    class="cat-card tech">
+        <img src="{{ url_for('static', filename='images/tech.jpg') }}" alt="Tech" loading="lazy">
+        <div class="cat-overlay"></div>
+        <div class="cat-info"><div class="cat-name">📱 Tech</div><div class="cat-arrow"><i class="bi bi-arrow-right"></i></div></div>
+      </a>
+
+      <a href="{{ url_for('select', category='records') }}" class="cat-card records">
+        <img src="{{ url_for('static', filename='images/records.jpg') }}" alt="Records" loading="lazy">
+        <div class="cat-overlay"></div>
+        <div class="cat-info"><div class="cat-name">🌍 Records</div><div class="cat-arrow"><i class="bi bi-arrow-right"></i></div></div>
+      </a>
+
+      <a href="{{ url_for('select', category='riddles') }}" class="cat-card riddles">
+        <img src="{{ url_for('static', filename='images/riddles.jpg') }}" alt="Riddles" loading="lazy">
+        <div class="cat-overlay"></div>
+        <div class="cat-info"><div class="cat-name">🧩 Riddles</div><div class="cat-arrow"><i class="bi bi-arrow-right"></i></div></div>
+      </a>
+
+      <!-- ROW 2: Coding | Space | Science | Champion -->
+      <a href="{{ url_for('select', category='coding') }}"  class="cat-card coding">
+        <img src="{{ url_for('static', filename='images/coding.jpg') }}" alt="Coding" loading="lazy">
+        <div class="cat-overlay"></div>
+        <div class="cat-info"><div class="cat-name">💻 Coding</div><div class="cat-arrow"><i class="bi bi-arrow-right"></i></div></div>
+      </a>
+
+      <a href="{{ url_for('select', category='space') }}"   class="cat-card space">
+        <img src="{{ url_for('static', filename='images/space.jpg') }}" alt="Space" loading="lazy">
+        <div class="cat-overlay"></div>
+        <div class="cat-info"><div class="cat-name">🌌 Space</div><div class="cat-arrow"><i class="bi bi-arrow-right"></i></div></div>
+      </a>
+
+      <!-- Science is now position 3 of row 2 -->
+      <a href="{{ url_for('select', category='science') }}" class="cat-card science">
+        <img src="{{ url_for('static', filename='images/science.jpg') }}" alt="Science" loading="lazy">
+        <div class="cat-overlay"></div>
+        <div class="cat-info"><div class="cat-name">🧪 Science</div><div class="cat-arrow"><i class="bi bi-arrow-right"></i></div></div>
+      </a>
+
+      <!-- Champion is now position 4 of row 2 (rightmost) -->
+      <a href="{{ url_for('select', category='champion') }}" class="cat-card champion">
+        <img src="{{ url_for('static', filename='images/champion.jpg') }}" alt="Champion" loading="lazy">
+        <div class="cat-overlay"></div>
+        <div class="cat-info">
+          <div class="cat-name">🏆 Champion <span class="cat-badge">All Mixed</span></div>
+          <div class="cat-arrow"><i class="bi bi-arrow-right"></i></div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.cat-card').forEach((card, i) => {
+  setTimeout(() => {
+    card.style.transition = 'opacity 0.5s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.3s';
+    card.style.opacity   = '1';
+    card.style.transform = 'translateY(0)';
+  }, 600 + i * 80);
+});
+</script>
+{% endblock %}

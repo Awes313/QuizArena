@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+{% block title %}Question {{ index }} / {{ total }} — QuizArena{% endblock %}
+
+{% block head %}
+<style>
+.quiz-page {
+  background:
+    radial-gradient(ellipse at 10% 20%, rgba(108,99,255,0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(0,255,200,0.12) 0%, transparent 50%),
+    var(--dark);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px 60px;
+  flex: 1;
+}
+
+.quiz-wrap { width: 100%; max-width: 860px; }
+
+/* ── HEADER ── */
+.quiz-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quiz-progress-text { font-size: 14px; color: var(--muted); font-weight: 600; }
+.quiz-progress-text span { color: var(--primary); font-size: 20px; font-family: 'Orbitron', sans-serif; font-weight: 700; }
+
+.quiz-cat-badge {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+  padding: 5px 14px; border-radius: 50px;
+  background: rgba(0,255,200,0.10); color: var(--primary); border: 1px solid rgba(0,255,200,0.2);
+}
+
+.score-chip { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
+.score-chip strong { color: var(--primary); font-size: 18px; }
+
+/* ── QUESTION PROGRESS ── */
+.q-progress-bar { height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; margin-bottom: 22px; }
+.q-progress-fill { height: 100%; background: linear-gradient(to right, var(--secondary), var(--primary)); border-radius: 3px; transition: width 0.4s ease; }
+
+/* ── TIMER ── */
+.timer-section { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+
+.timer-track { flex: 1; height: 10px; background: rgba(255,255,255,0.07); border-radius: 5px; overflow: hidden; }
+
+.timer-fill {
+  height: 100%; width: 100%; border-radius: 5px;
+  background: linear-gradient(to right, #00ffcc, #00c3ff, #ffd700, #ff4444);
+  background-size: 300% 100%;
+  transition: width 1s linear, background-position 1s linear;
+}
+
+.timer-fill.urgent { animation: timerPulse 0.5s infinite alternate; }
+@keyframes timerPulse { to { opacity: 0.6; } }
+
+.timer-count {
+  font-size: 16px; font-weight: 700; font-family: 'Orbitron', sans-serif;
+  color: var(--primary); width: 48px; text-align: center; transition: color 0.3s;
+  background: rgba(255,255,255,0.05); border-radius: 8px; padding: 4px 0;
+}
+.timer-count.urgent { color: #ff4444; }
+
+/* ── QUESTION BOX ── */
+.question-box {
+  background: rgba(13,19,32,0.88);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 20px;
+  padding: 36px;
+  margin-bottom: 24px;
+  animation: qFadeIn 0.4s ease;
+}
+
+.q-number {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--muted); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.q-number::before {
+  content: '';
+  width: 24px; height: 2px;
+  background: var(--primary); border-radius: 1px; display: inline-block;
+}
+
+.q-text { font-size: clamp(18px, 3vw, 24px); font-weight: 700; color: #fff; line-height: 1.5; }
+
+@keyframes qFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── OPTIONS ── */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  animation: qFadeIn 0.4s ease 0.1s both;
+}
+
+.option-btn {
+  background: rgba(13,19,32,0.82);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 18px 20px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  line-height: 1.4;
+  position: relative;
+  overflow: hidden;
+}
+
+.option-btn:hover:not(:disabled):not(.selected-pending) {
+  border-color: rgba(0,255,200,0.4);
+  transform: translateX(4px);
+  background: rgba(0,255,200,0.06);
+  color: #fff;
+}
+
+.option-letter {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+  transition: all 0.25s;
+}
+
+.option-text { flex: 1; }
+
+/* ── ANSWER STATES ── */
+/* 1. Selected but waiting for server result (brief) */
+.option-btn.selected-pending {
+  border-color: rgba(0,195,255,0.6);
+  background: rgba(0,195,255,0.10);
+  cursor: not-allowed;
+  transform: none;
+}
+.option-btn.selected-pending .option-letter { background: #00c3ff; color: #000; border-color: #00c3ff; }
+
+/* 2. CORRECT answer (green) */
+.option-btn.correct {
+  border-color: #00ff88 !important;
+  background: rgba(0,255,136,0.14) !important;
+  color: #00ff88 !important;
+  transform: none;
+  animation: correctPop 0.4s ease;
+}
+.option-btn.correct .option-letter { background: #00ff88 !important; color: #000 !important; border-color: #00ff88 !important; }
+
+@keyframes correctPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+/* 3. WRONG answer (red) */
+.option-btn.wrong {
+  border-color: #ff3b3b !important;
+  background: rgba(255,59,59,0.13) !important;
+  color: #ff6b6b !important;
+  transform: none;
+  animation: wrongShake 0.4s ease;
+}
+.option-btn.wrong .option-letter { background: #ff3b3b !important; color: #fff !important; border-color: #ff3b3b !important; }
+
+@keyframes wrongShake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-6px); }
+  75%       { transform: translateX(6px); }
+}
+
+/* 4. Reveal correct on timeout (gold) */
+.option-btn.reveal-correct {
+  border-color: var(--gold) !important;
+  background: rgba(255,215,0,0.12) !important;
+  color: var(--gold) !important;
+}
+.option-btn.reveal-correct .option-letter { background: var(--gold) !important; color: #000 !important; border-color: var(--gold) !important; }
+
+/* 5. Dimmed options after answer */
+.option-btn.dimmed { opacity: 0.35; cursor: not-allowed; }
+
+.option-btn:disabled { cursor: not-allowed; }
+
+/* ── TIMEOUT BANNER ── */
+.timeout-banner {
+  display: none;
+  text-align: center;
+  padding: 12px;
+  margin-top: 16px;
+  background: rgba(255,215,0,0.08);
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: 12px;
+  color: var(--gold);
+  font-size: 14px;
+  font-weight: 600;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+@media (max-width: 640px) {
+  .options-grid { grid-template-columns: 1fr; }
+  .question-box { padding: 24px 20px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="quiz-page">
+<div class="quiz-wrap">
+
+  <!-- HEADER -->
+  <div class="quiz-header">
+    <div class="quiz-progress-text">
+      Question <span>{{ index }}</span> of {{ total }}
+    </div>
+    <div class="quiz-cat-badge">
+      {{ q['category'] | capitalize }} · {{ q['difficulty'] | capitalize }}
+    </div>
+    <div class="score-chip">
+      <i class="bi bi-star-fill" style="color:var(--gold)"></i>
+      Score <strong id="liveScore">{{ session.get('score', 0) }}</strong>
+    </div>
+  </div>
+
+  <!-- QUESTION PROGRESS BAR -->
+  <div class="q-progress-bar">
+    <div class="q-progress-fill" style="width: {{ ((index-1) / total * 100)|int }}%"></div>
+  </div>
+
+  <!-- TIMER -->
+  <div class="timer-section">
+    <div class="timer-track">
+      <div class="timer-fill" id="timerFill"></div>
+    </div>
+    <div class="timer-count" id="timerCount">20</div>
+  </div>
+
+  <!-- QUESTION -->
+  <div class="question-box">
+    <div class="q-number">Question {{ index }}</div>
+    <div class="q-text">{{ q["question"] }}</div>
+  </div>
+
+  <!-- OPTIONS -->
+  <form method="POST" id="quizForm" action="{{ url_for('question') }}">
+    <input type="hidden" name="answer" id="selectedAnswer">
+    <!-- Hidden: server sends correct answer only for reveal after submit/timeout -->
+    <input type="hidden" id="correctAnswer" value="{{ q['answer'] }}">
+
+    <div class="options-grid" id="optionsGrid">
+      {% set letters = ['A', 'B', 'C', 'D'] %}
+      {% for opt in q["options"] %}
+      <button type="button" class="option-btn" data-value="{{ opt }}">
+        <div class="option-letter">{{ letters[loop.index0] }}</div>
+        <div class="option-text">{{ opt }}</div>
+      </button>
+      {% endfor %}
+    </div>
+  </form>
+
+  <!-- TIMEOUT BANNER -->
+  <div class="timeout-banner" id="timeoutBanner">
+    ⏰ Time's up! The correct answer has been highlighted above.
+  </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/*
+  NOTE ON SECURITY:
+  The correct answer IS passed to this page for client-side feedback display only.
+  This is intentional for UX — the server ALSO validates independently.
+  An attacker reading the HTML can see the answer, but that doesn't affect server score.
+  For higher security remove the reveal and rely purely on server-side.
+*/
+
+const TOTAL_TIME   = 20;
+const correctAns   = document.getElementById("correctAnswer").value;
+const timerFill    = document.getElementById("timerFill");
+const timerCount   = document.getElementById("timerCount");
+const buttons      = document.querySelectorAll(".option-btn");
+const form         = document.getElementById("quizForm");
+const ansInput     = document.getElementById("selectedAnswer");
+const timeoutBanner= document.getElementById("timeoutBanner");
+
+let timeLeft = TOTAL_TIME;
+let answered = false;
+
+/* ── Timer ── */
+const timer = setInterval(() => {
+  timeLeft--;
+  const pct = (timeLeft / TOTAL_TIME) * 100;
+  timerFill.style.width = pct + "%";
+  timerCount.textContent = timeLeft;
+
+  if (timeLeft <= 7) {
+    timerCount.classList.add("urgent");
+    timerFill.classList.add("urgent");
+  }
+
+  if (timeLeft <= 0) {
+    clearInterval(timer);
+    handleTimeout();
+  }
+}, 1000);
+
+/* ── Option click ── */
+buttons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (answered) return;
+    answered = true;
+    clearInterval(timer);
+
+    const selected = btn.getAttribute("data-value");
+    ansInput.value = selected;
+
+    // Disable all buttons immediately
+    buttons.forEach(b => { b.disabled = true; });
+
+    const isCorrect = (selected === correctAns);
+
+    if (isCorrect) {
+      btn.classList.add("correct");
+    } else {
+      btn.classList.add("wrong");
+      // Show the correct answer
+      buttons.forEach(b => {
+        if (b.getAttribute("data-value") === correctAns) {
+          b.classList.add("reveal-correct");
+        }
+      });
+    }
+
+    // Dim all other buttons
+    buttons.forEach(b => {
+      if (!b.classList.contains("correct") &&
+          !b.classList.contains("wrong") &&
+          !b.classList.contains("reveal-correct")) {
+        b.classList.add("dimmed");
+      }
+    });
+
+    // Submit after short delay so user sees feedback
+    setTimeout(() => form.submit(), 1000);
+  });
+});
+
+/* ── Timeout handler ── */
+function handleTimeout() {
+  if (answered) return;
+  answered = true;
+
+  buttons.forEach(b => { b.disabled = true; });
+  ansInput.value = ""; // blank = wrong (server will mark incorrect)
+
+  // Reveal correct answer in gold
+  buttons.forEach(b => {
+    if (b.getAttribute("data-value") === correctAns) {
+      b.classList.add("reveal-correct");
+    } else {
+      b.classList.add("dimmed");
+    }
+  });
+
+  timeoutBanner.style.display = "block";
+
+  // Give user 1.8 seconds to see the correct answer before moving on
+  setTimeout(() => form.submit(), 1800);
+}
+
+/* ── Keyboard shortcuts: 1/2/3/4 or A/B/C/D ── */
+document.addEventListener("keydown", e => {
+  if (answered) return;
+  const map = { "1":0,"2":1,"3":2,"4":3,"a":0,"b":1,"c":2,"d":3 };
+  const idx = map[e.key.toLowerCase()];
+  if (idx !== undefined && buttons[idx]) buttons[idx].click();
+});
+</script>
+{% endblock %}
