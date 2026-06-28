@@ -10,19 +10,37 @@ from flask import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# ══════════════════════════════════════════════
 #  APP CONFIG
-
+# ══════════════════════════════════════════════
 app = Flask(__name__)
 app.secret_key        = os.environ.get("SECRET_KEY", "quizarena-dev-secret-2024")
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_PERMANENT"]       = False
-app.config["SESSION_COOKIE_SECURE"]   = False
+# Secure cookies on Render (HTTPS), plain HTTP locally
+app.config["SESSION_COOKIE_SECURE"]   = bool(os.environ.get("RENDER"))
 
-DATABASE = os.environ.get("DATABASE_PATH", "quiz_app.db")
+# On Render filesystem is ephemeral — use /tmp.  Locally use project root.
+_db_default = "/tmp/quiz_app.db" if os.environ.get("RENDER") else "quiz_app.db"
+DATABASE    = os.environ.get("DATABASE_PATH", _db_default)
 
+# ── Auto-init DB on cold start (Render wipes /tmp on restart) ──
+def _auto_init_db():
+    if not os.path.exists(DATABASE):
+        try:
+            import create_db as _cdb
+            _cdb.DB = DATABASE
+            _cdb.create_database()
+            print(f"[QuizArena] DB auto-created at {DATABASE}")
+        except Exception as e:
+            print(f"[QuizArena] DB init error: {e}")
+
+_auto_init_db()
+
+# ══════════════════════════════════════════════
 #  DATABASE HELPERS
-
+# ══════════════════════════════════════════════
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(DATABASE, timeout=10)
@@ -35,8 +53,9 @@ def close_db(exception):
     if db:
         db.close()
 
+# ══════════════════════════════════════════════
 #  DECORATORS
-
+# ══════════════════════════════════════════════
 def login_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
@@ -60,8 +79,9 @@ def admin_required(f):
         return f(*args, **kwargs)
     return wrap
 
+# ══════════════════════════════════════════════
 #  CONTEXT PROCESSOR
-
+# ══════════════════════════════════════════════
 @app.context_processor
 def inject_user():
     username = None
@@ -75,8 +95,9 @@ def inject_user():
             is_admin = bool(row["is_admin"])
     return dict(current_user=username, is_admin=is_admin)
 
+# ══════════════════════════════════════════════
 #  ERROR PAGES
-
+# ══════════════════════════════════════════════
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html"), 404
@@ -85,17 +106,18 @@ def page_not_found(e):
 def server_error(e):
     return render_template("500.html"), 500
 
-
-#  ROOT
-
+# ══════════════════════════════════════════════
+#  ROOT — always redirect to login first
+# ══════════════════════════════════════════════
 @app.route("/")
 def root():
     if "user_id" in session:
         return redirect(url_for("home"))
     return redirect(url_for("login"))
 
+# ══════════════════════════════════════════════
 #  REGISTER
-
+# ══════════════════════════════════════════════
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if "user_id" in session:
@@ -135,8 +157,9 @@ def register():
 
     return render_template("register.html")
 
+# ══════════════════════════════════════════════
 #  LOGIN
-
+# ══════════════════════════════════════════════
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if "user_id" in session:
@@ -157,23 +180,26 @@ def login():
 
     return render_template("login.html")
 
+# ══════════════════════════════════════════════
 #  LOGOUT
-
+# ══════════════════════════════════════════════
 @app.route("/logout")
 def logout():
     session.clear()
     flash("Logged out successfully.", "info")
     return redirect(url_for("login"))
 
+# ══════════════════════════════════════════════
 #  HOME
-
+# ══════════════════════════════════════════════
 @app.route("/home")
 @login_required
 def home():
     return render_template("home.html")
 
+# ══════════════════════════════════════════════
 #  SELECT DIFFICULTY
-
+# ══════════════════════════════════════════════
 @app.route("/select/<category>")
 @login_required
 def select(category):
@@ -183,17 +209,18 @@ def select(category):
         return redirect(url_for("home"))
     return render_template("select.html", category=category)
 
-#  QUIZ  —  load questions, store in session
-
+# ══════════════════════════════════════════════
+#  QUIZ
+# ══════════════════════════════════════════════
 @app.route("/quiz/<category>/<difficulty>")
 @login_required
 def quiz(category, difficulty):
     db = get_db()
 
     if category == "champion":
-        rows = db.execute("""
-            SELECT * FROM questions ORDER BY RANDOM() LIMIT 100
-        """).fetchall()
+        rows = db.execute(
+            "SELECT * FROM questions ORDER BY RANDOM() LIMIT 100"
+        ).fetchall()
     else:
         rows = db.execute(
             "SELECT * FROM questions WHERE category=? AND difficulty=?",
@@ -227,8 +254,9 @@ def quiz(category, difficulty):
     session["quiz_start"] = datetime.utcnow().isoformat()
     return redirect(url_for("question"))
 
+# ══════════════════════════════════════════════
 #  QUESTION
-
+# ══════════════════════════════════════════════
 @app.route("/question", methods=["GET", "POST"])
 @login_required
 def question():
@@ -254,8 +282,9 @@ def question():
                            index=index + 1,
                            total=len(questions))
 
+# ══════════════════════════════════════════════
 #  RESULT
-
+# ══════════════════════════════════════════════
 @app.route("/result")
 @login_required
 def result():
@@ -267,20 +296,15 @@ def result():
     difficulty = session.get("quiz_diff", "easy")
 
     db = get_db()
-
-    # Save to results table
     db.execute("""
         INSERT INTO results (user_id, category, difficulty, score, total, percentage, played_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (session["user_id"], category, difficulty, score, total, percentage,
           datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")))
-
-    # XP reward
     db.execute("UPDATE users SET xp = xp + ? WHERE id=?",
                (score * 10, session["user_id"]))
     db.commit()
 
-    # Clear quiz session data
     for key in ["questions", "q_index", "score", "quiz_cat", "quiz_diff", "quiz_start"]:
         session.pop(key, None)
 
@@ -291,8 +315,9 @@ def result():
                            category=category,
                            difficulty=difficulty)
 
+# ══════════════════════════════════════════════
 #  DASHBOARD
-
+# ══════════════════════════════════════════════
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -334,29 +359,18 @@ def dashboard():
                            level=level,
                            xp_in_lvl=xp_in_lvl)
 
-#  LEADERBOARD  ← Fixed: pulls from results table
-
-
+# ══════════════════════════════════════════════
+#  LEADERBOARD
+# ══════════════════════════════════════════════
 CATEGORY_ICONS = {
-    "gaming":   "🎮",
-    "tech":     "💻",
-    "records":  "🌍",
-    "riddles":  "🧩",
-    "coding":   "⌨️",
-    "space":    "🚀",
-    "science":  "🔬",
-    "champion": "👑",
+    "gaming":"🎮","tech":"💻","records":"🌍","riddles":"🧩",
+    "coding":"⌨️","space":"🚀","science":"🔬","champion":"👑",
 }
 
 AVATAR_PALETTES = [
-    ("#00ffc8", "#6c63ff"),
-    ("#ff6b6b", "#ee0979"),
-    ("#f7971e", "#ffd200"),
-    ("#56ab2f", "#a8e063"),
-    ("#4776e6", "#8e54e9"),
-    ("#f953c6", "#b91d73"),
-    ("#11998e", "#38ef7d"),
-    ("#fc4a1a", "#f7b733"),
+    ("#00ffc8","#6c63ff"),("#ff6b6b","#ee0979"),("#f7971e","#ffd200"),
+    ("#56ab2f","#a8e063"),("#4776e6","#8e54e9"),("#f953c6","#b91d73"),
+    ("#11998e","#38ef7d"),("#fc4a1a","#f7b733"),
 ]
 
 def avatar_colors(user_id):
@@ -371,7 +385,7 @@ def leaderboard(category="all"):
 
     if category == "all":
         rows = db.execute("""
-            SELECT r.id, r.user_id, u.username, r.category,
+            SELECT r.user_id, u.username, r.category,
                    r.score, r.total, r.percentage, r.difficulty, r.played_at
             FROM results r
             JOIN users u ON u.id = r.user_id
@@ -380,7 +394,7 @@ def leaderboard(category="all"):
         """).fetchall()
     else:
         rows = db.execute("""
-            SELECT r.id, r.user_id, u.username, r.category,
+            SELECT r.user_id, u.username, r.category,
                    r.score, r.total, r.percentage, r.difficulty, r.played_at
             FROM results r
             JOIN users u ON u.id = r.user_id
@@ -404,8 +418,6 @@ def leaderboard(category="all"):
             "avatar_color2": c2,
         })
 
-    # Current user rank
-
     user_rank = None
     uid = session.get("user_id")
     if uid:
@@ -414,12 +426,8 @@ def leaderboard(category="all"):
                 games = db.execute(
                     "SELECT COUNT(*) FROM results WHERE user_id=?", (uid,)
                 ).fetchone()[0]
-                user_rank = {
-                    "rank":     i + 1,
-                    "score":    e["score"],
-                    "accuracy": e["accuracy"],
-                    "games":    games,
-                }
+                user_rank = {"rank": i+1, "score": e["score"],
+                             "accuracy": e["accuracy"], "games": games}
                 break
 
     return render_template("leaderboard.html",
@@ -427,8 +435,9 @@ def leaderboard(category="all"):
                            selected=category,
                            user_rank=user_rank)
 
+# ══════════════════════════════════════════════
 #  ADMIN
-
+# ══════════════════════════════════════════════
 @app.route("/admin", methods=["GET", "POST"])
 @admin_required
 def admin():
@@ -444,16 +453,16 @@ def admin():
             flash("Question deleted.", "success")
             return redirect(url_for("admin"))
 
-        cat   = request.form.get("category", "").strip()
-        diff  = request.form.get("difficulty", "").strip()
-        q_txt = request.form.get("question", "").strip()
-        o1    = request.form.get("option1", "").strip()
-        o2    = request.form.get("option2", "").strip()
-        o3    = request.form.get("option3", "").strip()
-        o4    = request.form.get("option4", "").strip()
-        ans_k = request.form.get("answer", "")
-        opt_map = {"A": o1, "B": o2, "C": o3, "D": o4}
-        answer  = opt_map.get(ans_k, "")
+        cat   = request.form.get("category","").strip()
+        diff  = request.form.get("difficulty","").strip()
+        q_txt = request.form.get("question","").strip()
+        o1    = request.form.get("option1","").strip()
+        o2    = request.form.get("option2","").strip()
+        o3    = request.form.get("option3","").strip()
+        o4    = request.form.get("option4","").strip()
+        ans_k = request.form.get("answer","")
+        opt_map = {"A":o1,"B":o2,"C":o3,"D":o4}
+        answer  = opt_map.get(ans_k,"")
 
         if not all([cat, diff, q_txt, o1, o2, o3, o4, answer]):
             flash("All fields are required.", "danger")
@@ -468,18 +477,15 @@ def admin():
         flash("Question added successfully!", "success")
         return redirect(url_for("admin"))
 
-    f_cat  = request.args.get("cat", "")
-    f_diff = request.args.get("diff", "")
-    search = request.args.get("q", "")
+    f_cat  = request.args.get("cat","")
+    f_diff = request.args.get("diff","")
+    search = request.args.get("q","")
 
     sql    = "SELECT * FROM questions WHERE 1=1"
     params = []
-    if f_cat:
-        sql += " AND category=?";   params.append(f_cat)
-    if f_diff:
-        sql += " AND difficulty=?"; params.append(f_diff)
-    if search:
-        sql += " AND question LIKE ?"; params.append(f"%{search}%")
+    if f_cat:   sql += " AND category=?";      params.append(f_cat)
+    if f_diff:  sql += " AND difficulty=?";     params.append(f_diff)
+    if search:  sql += " AND question LIKE ?";  params.append(f"%{search}%")
     sql += " ORDER BY id DESC LIMIT 100"
 
     questions = db.execute(sql, params).fetchall()
@@ -489,14 +495,11 @@ def admin():
 
     return render_template("admin.html",
                            questions=questions,
-                           total_q=total_q,
-                           total_u=total_u,
-                           total_r=total_r,
-                           f_cat=f_cat,
-                           f_diff=f_diff,
-                           search=search)
+                           total_q=total_q, total_u=total_u, total_r=total_r,
+                           f_cat=f_cat, f_diff=f_diff, search=search)
 
+# ══════════════════════════════════════════════
 #  RUN
-
+# ══════════════════════════════════════════════
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
