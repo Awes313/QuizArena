@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-A Full-Stack Quiz Web Application built with Flask, Bootstrap 5, and SQLite.
+A Full-Stack Quiz Web Application built with Python, Flask, SQL, HTML, CSS, and Bootstrap.
 </p>
 
 <p align="center">
@@ -15,7 +15,6 @@ A Full-Stack Quiz Web Application built with Flask, Bootstrap 5, and SQLite.
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.0-black?logo=flask)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5-purple?logo=bootstrap)
-![SQLite](https://img.shields.io/badge/SQLite-Database-blue?logo=sqlite)
 ![Gunicorn](https://img.shields.io/badge/Gunicorn-Server-499848?logo=gunicorn)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Awes313/QuizArena)
@@ -133,8 +132,8 @@ An admin panel allows adding and deleting questions from the question bank witho
 | Category | Technologies |
 |----------|--------------|
 | **Backend** | Python, Flask |
-| **Frontend** | HTML5, CSS3, Bootstrap 5, JavaScript |
-| **Database** | SQLite |
+| **Frontend** | HTML5, CSS3, Bootstrap 5 |
+| **Database** | SQL |
 | **Authentication** | Flask Session, Werkzeug Password Hashing |
 | **Template Engine** | Jinja2 |
 | **WSGI Server** | Gunicorn |
@@ -391,7 +390,7 @@ Access the admin panel at `/admin` after logging in.
 | Admin Panel | ✅ |
 | Add / Delete Questions | ✅ |
 | Responsive Design | ✅ |
-| SQLite Database | ✅ |
+| SQL Database | ✅ |
 
 ---
 
